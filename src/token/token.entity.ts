@@ -2,7 +2,7 @@ import { Entity, ObjectIdColumn, Column } from 'typeorm';
 
 @Entity()
 export class Token {
-  
+
   @ObjectIdColumn()
   _id: string;
 
@@ -22,9 +22,9 @@ export class Token {
   password: string;
 
   @Column()
-  expire: string;
+  expire: number;
 
   @Column()
-  timeCalled: string;
+  timeCalled: number;
 
 }
