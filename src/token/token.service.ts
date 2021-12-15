@@ -1,13 +1,13 @@
 import { Token } from './token.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { getMongoRepository, MongoRepository, Repository } from 'typeorm';
 
 @Injectable()
 export class TokenService {
   constructor(
     @InjectRepository(Token)
-    private tokenRepo: Repository<Token>,
+    private tokenRepo: MongoRepository<Token>,
   ) {}
 
   async getTokenObject(id: string): Promise<Token> {
@@ -16,5 +16,10 @@ export class TokenService {
     })
 
     return tokenObject;
+  }
+
+  async updateToken(id: string, data: any): Promise<Boolean> {
+    const update = await this.tokenRepo.update({'_id': 'token_' + id}, data);
+    return update.affected > 0;
   }
 }

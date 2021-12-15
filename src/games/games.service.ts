@@ -2,9 +2,12 @@ import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from "dayjs";
+import { AxiosResponse } from 'axios';
 import { TokenService } from "src/token/token.service";
 import { Repository } from 'typeorm';
 import { Games } from "./games.entity";
+import { lastValueFrom, Observable } from "rxjs";
+import { map } from 'rxjs/operators';
 
 interface IHeaders {
   client_id: string,
@@ -45,15 +48,26 @@ export class GamesService {
     const expired: boolean = (tokenObject.expire + tokenObject.timeCalled) < now;
 
     if (tokenObject.access.length === 0 || expired) {
-      const cred = this.httpService.post('https://id.twitch.tv/oauth2/token', null, { 
+      const getAccess = this.httpService.post('https://id.twitch.tv/oauth2/token', null, {
         params: creds
-      });
+      })
+      const cred = await lastValueFrom(getAccess)
+      await this.tokenFunctions.updateToken('igdb',
+        {
+          access: cred.data.access_token,
+          expire: cred.data.expires_in,
+          timeCalled: now
+        })
 
-      console.log(cred);
+      return {
+        client_id: tokenObject.clientId,
+        authorization: "Bearer " + cred.data.access_token
+      }
     } else {
-      
+      return {
+        client_id: tokenObject.clientId,
+        authorization: "Bearer " + tokenObject.access
+      }
     }
-
-    return {client_id: "", authorization: ""}
   }
 }

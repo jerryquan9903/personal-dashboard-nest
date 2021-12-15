@@ -8,14 +8,9 @@ import { GamesService } from "./games.service";
 @Controller('games')
 export class GamesController {
   private tokenObj: any;
-  private headers: {
-    "Client-Id": string,
-    Authorization: string,
-  }
 
   constructor(
     private games: GamesService,
-    private token: TokenService,
   ) {
     (async () => {
       this.tokenObj = await this.games.requestToken();
@@ -26,5 +21,10 @@ export class GamesController {
   async getCurrentGame(): Promise<Games> {
     const game = await this.games.findByName("Tokyo Xanadu eX+");
     return game;
+  }
+
+  @Get('token')
+  async getToken(): Promise<any> {
+    return this.tokenObj
   }
 }
