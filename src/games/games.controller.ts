@@ -15,24 +15,17 @@ export class GamesController {
 
   @Get('current')
   async getCurrentGame(): Promise<IGame> {
-    const game = await this.games.getCurrentGame();
-    if (game.id?.length > 0) return game;
-    else throw new HttpException('No games found', HttpStatus.NOT_FOUND)
+    return this.games.getCurrentGame();
   }
 
   @Get('next')
   async getNextGames(): Promise<INextGames[]> {
-    const nextGames = await this.games.getNextGames();
-    if (nextGames.length > 0) return nextGames;
-    else throw new HttpException('No games found', HttpStatus.NOT_FOUND)
+    return this.games.getNextGames();
   }
 
   @Get('details')
   @ApiQuery({ name: 'id' })
   async getGameDetails(@Query('id') id: string): Promise<IGame> {
-    const gameDetails = await this.games.getGameDetails(id);
-    if (gameDetails.id !== id) {
-      throw new HttpException('No games found', HttpStatus.NOT_FOUND)
-    } else return gameDetails;
+    return this.games.getGameDetails(id);
   }
 }

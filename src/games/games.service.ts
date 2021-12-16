@@ -1,5 +1,5 @@
 import { HttpService } from "@nestjs/axios";
-import { Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from "dayjs";
 import { TokenService } from "src/token/token.service";
@@ -32,14 +32,6 @@ export class GamesService {
     (async () => {
       this.igdbHeaders = await this.requestToken();
     })()
-  }
-
-  async findByName(name: string): Promise<Games> {
-    const test = await this.gamesRepo.find({
-      name: name
-    })
-
-    return test[0];
   }
 
   async requestToken(): Promise<IHeaders> {
@@ -114,6 +106,7 @@ export class GamesService {
     } else return "";
   }
 
+  // /games/current
   async getCurrentGame(): Promise<IGame> {
     let selectedGame: Games;
     const currentGames = await this.gamesRepo.find({
@@ -121,15 +114,16 @@ export class GamesService {
     });
 
     if (currentGames.length > 0) {
-      currentGames.sort(function (a, b) {
-        return a.lastPlayed - b.lastPlayed;
-      })
-
+      currentGames.sort(function (a, b) { return a.lastPlayed - b.lastPlayed; })
       selectedGame = currentGames[0];
     } else {
       const notCompletedGames = await this.gamesRepo.find({
         where: { completion: { $ne: "Completed" } }
       });
+
+      if (notCompletedGames.length === 0) {
+        throw new HttpException('No games found', HttpStatus.NOT_FOUND)
+      }
 
       selectedGame = notCompletedGames[Math.round(Math.random() * notCompletedGames.length)];
     }
@@ -149,8 +143,13 @@ export class GamesService {
     return currentGameFinal;
   }
 
+  // /games/next
   async getNextGames(): Promise<INextGames[]> {
     const nextList = await this.gamesRepo.find({ completion: "Plan to Play" });
+    
+    if (nextList.length === 0)
+      throw new HttpException('No games found', HttpStatus.NOT_FOUND)
+
     const nextResult: INextGames[] = await Promise.all(
       nextList.map(async (game) => {
         return {
@@ -164,21 +163,12 @@ export class GamesService {
     return nextResult;
   }
 
+  // /games/details
   async getGameDetails(id: string): Promise<IGame> {
     const getGame = await this.gamesRepo.find({ _id: id });
 
     if (getGame.length === 0) {
-      return {
-        id: "",
-        name: "",
-        image: "",
-        playTime: 0,
-        lastPlayed: 0,
-        genres: "",
-        devs: "",
-        releaseDate: "",
-        description: ""
-      }
+      throw new HttpException('No games found', HttpStatus.NOT_FOUND)
     } else {
       const game = getGame[0];
       const detailsResult = {
