@@ -37,33 +37,44 @@ export class GamesService {
   async requestToken(): Promise<IHeaders> {
     const tokenObject = await this.tokenFunctions.getTokenObject();
     const igdb = tokenObject.igdb;
-
+    const now = dayjs(new Date()).unix();
+    const expired: boolean = (igdb.expire + igdb.lastRequest) < now;
     const creds: ICreds = {
       client_id: igdb.clientId,
       client_secret: igdb.clientSecret,
       grant_type: "client_credentials"
     }
 
-    const now = dayjs(new Date()).unix();
-    const expired: boolean = (igdb.expire + igdb.lastRequest) < now;
-
     if (igdb.access.length === 0 || expired) {
-      const getAccess = this.httpService.post('https://id.twitch.tv/oauth2/token', null, {
-        params: creds
-      })
-      const cred = await lastValueFrom(getAccess)
+      let cred;
+      await lastValueFrom(this.httpService.post(
+        'https://id.twitch.tv/oauth2/token',
+        null,
+        {
+          timeout: 6000,
+          params: creds
+        }
+      ))
+        .then((success) => cred = success.data)
+        .catch((e) => {
+          if (e.message.includes('timeout'))
+            throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+          else
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      // const cred = await lastValueFrom(getAccess)
       await this.tokenFunctions.updateToken('igdb',
         {
           client_id: igdb.clientId,
           client_secret: igdb.clientSecret,
-          access: cred.data.access_token,
-          expire: cred.data.expires_in,
+          access: cred.access_token,
+          expire: cred.expires_in,
           last_request: now
         })
 
       return {
         client_id: igdb.clientId,
-        authorization: "Bearer " + cred.data.access_token
+        authorization: "Bearer " + cred.access_token
       }
     } else {
       return {
@@ -74,20 +85,31 @@ export class GamesService {
   }
 
   async getCover(game: Games): Promise<string> {
-    const getGame = await lastValueFrom(this.httpService.post(
+    let gameOnIGDB;
+    let url;
+
+    await lastValueFrom(this.httpService.post(
       'https://api.igdb.com/v4/games/',
       `search "${game.name}"; fields cover;`,
       {
+        timeout: 6000,
         headers: {
           "Client-Id": this.igdbHeaders.client_id,
           "Authorization": this.igdbHeaders.authorization
         }
       }
     ))
+      .then((success) => gameOnIGDB = success.data)
+      .catch((e) => {
+        if (e.message.includes('timeout'))
+          throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+        else
+          throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+      });
 
-    const gameOnIGDB = getGame.data;
+    if (gameOnIGDB.length === 0) return "";
 
-    const getCover = await lastValueFrom(this.httpService.post(
+    await lastValueFrom(this.httpService.post(
       'https://api.igdb.com/v4/covers/',
       `fields url; where id = ${gameOnIGDB[0].cover || -1};`,
       {
@@ -97,8 +119,13 @@ export class GamesService {
         }
       }
     ))
-
-    const url = getCover.data[0].url.replace("thumb", "1080p") || "";
+      .then((success) => url = success.data[0].url.replace("thumb", "1080p") || "")
+      .catch((e) => {
+        if (e.message.includes('timeout'))
+          throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+        else
+          throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+      });
 
     if (url.length > 0) {
       this.gamesRepo.update({ "_id": game._id }, { coverUrl: url });
@@ -106,7 +133,7 @@ export class GamesService {
     } else return "";
   }
 
-  // /games/current
+  // games/current
   async getCurrentGame(): Promise<IGame> {
     let selectedGame: Games;
     const currentGames = await this.gamesRepo.find({
@@ -143,10 +170,10 @@ export class GamesService {
     return currentGameFinal;
   }
 
-  // /games/next
+  // games/next
   async getNextGames(): Promise<INextGames[]> {
     const nextList = await this.gamesRepo.find({ completion: "Plan to Play" });
-    
+
     if (nextList.length === 0)
       throw new HttpException('No games found', HttpStatus.NOT_FOUND)
 
@@ -163,7 +190,7 @@ export class GamesService {
     return nextResult;
   }
 
-  // /games/details
+  // games/details
   async getGameDetails(id: string): Promise<IGame> {
     const getGame = await this.gamesRepo.find({ _id: id });
 

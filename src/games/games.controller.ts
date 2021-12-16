@@ -13,6 +13,26 @@ export class GamesController {
 
   }
 
+  // test cover func
+  // @Get('cover')
+  // async getCover(): Promise<string> {
+  //   return this.games.getCover({
+  //     _id: "",
+  //     name: "aaajdfvgervfa",
+  //     gameId: "",
+  //     source: "",
+  //     platform: "",
+  //     playTime: 0,
+  //     lastPlayed: 0,
+  //     genres: "",
+  //     devs: "",
+  //     releaseDate: "",
+  //     description: "",
+  //     coverUrl: "",
+  //     completion: ""
+  //   });
+  // }
+
   @Get('current')
   async getCurrentGame(): Promise<IGame> {
     return this.games.getCurrentGame();
