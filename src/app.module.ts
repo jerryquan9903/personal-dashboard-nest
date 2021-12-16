@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Games } from './games/games.entity';
 import { TokenModule } from './token/token.module';
 import { Token } from './token/token.entity';
+import { WeatherModule } from './weather/weather.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { Token } from './token/token.entity';
       useUnifiedTopology: true
     }),
     GamesModule,
-    TokenModule
+    TokenModule,
+    WeatherModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,24 +7,29 @@ export class Token {
   _id: string;
 
   @Column()
-  access: string;
+  igdb: {
+    clientId: string,
+    clientSecret: string,
+    access: string,
+    expire: number,
+    lastRequest: number,
+  }
 
   @Column()
-  clientId: string;
+  openWeather: {
+    access: string,
+  }
 
   @Column()
-  clientSecret: string;
+  google: {
+    access: string,
+  }
 
   @Column()
-  username: string;
-
-  @Column() 
-  password: string;
-
-  @Column()
-  expire: number;
-
-  @Column()
-  timeCalled: number;
-
+  reddit: {
+    clientId: string,
+    clientSecret: string,
+    username: string,
+    password: string
+  }
 }
