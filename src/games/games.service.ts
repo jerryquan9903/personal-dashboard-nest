@@ -47,21 +47,23 @@ export class GamesService {
 
     if (igdb.access.length === 0 || expired) {
       let cred;
-      await lastValueFrom(this.httpService.post(
-        'https://id.twitch.tv/oauth2/token',
-        null,
-        {
-          timeout: 6000,
-          params: creds
-        }
-      ))
-        .then((success) => cred = success.data)
-        .catch((e) => {
-          if (e.message.includes('timeout'))
-            throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
-          else
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-        })
+
+      try {
+        const credData = await lastValueFrom(this.httpService.post(
+          'https://id.twitch.tv/oauth2/token',
+          null,
+          {
+            timeout: 6000,
+            params: creds
+          }
+        ));
+        cred = credData.data;
+      } catch (e) {
+        if (e.message.includes('timeout'))
+          throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+        else
+          throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
       // const cred = await lastValueFrom(getAccess)
       await this.tokenFunctions.updateToken('igdb',
         {
@@ -87,45 +89,44 @@ export class GamesService {
   async getCover(game: Games): Promise<string> {
     let gameOnIGDB;
     let url;
+    const headers = {
+      "Client-Id": this.igdbHeaders.client_id,
+      "Authorization": this.igdbHeaders.authorization
+    }
 
-    await lastValueFrom(this.httpService.post(
-      'https://api.igdb.com/v4/games/',
-      `search "${game.name}"; fields cover;`,
-      {
-        timeout: 6000,
-        headers: {
-          "Client-Id": this.igdbHeaders.client_id,
-          "Authorization": this.igdbHeaders.authorization
-        }
-      }
-    ))
-      .then((success) => gameOnIGDB = success.data)
-      .catch((e) => {
-        if (e.message.includes('timeout'))
-          throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
-        else
-          throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-      });
+    // search game & get game's cover ID
+    try {
+      const gameCover = await lastValueFrom(this.httpService.post(
+        'https://api.igdb.com/v4/games/',
+        `search "${game.name}"; fields cover;`,
+        { timeout: 6000, headers: headers }
+      ));
+
+      gameOnIGDB = gameCover.data;
+    } catch (e) {
+      if (e.message.includes('timeout'))
+        throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+      else
+        throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    };
 
     if (gameOnIGDB.length === 0) return "";
 
-    await lastValueFrom(this.httpService.post(
-      'https://api.igdb.com/v4/covers/',
-      `fields url; where id = ${gameOnIGDB[0].cover || -1};`,
-      {
-        headers: {
-          "Client-Id": this.igdbHeaders.client_id,
-          "Authorization": this.igdbHeaders.authorization
-        }
-      }
-    ))
-      .then((success) => url = success.data[0].url.replace("thumb", "1080p") || "")
-      .catch((e) => {
-        if (e.message.includes('timeout'))
-          throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
-        else
-          throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-      });
+    // get game cover's URL
+    try {
+      const coverData = await lastValueFrom(this.httpService.post(
+        'https://api.igdb.com/v4/covers/',
+        `fields url; where id = ${gameOnIGDB[0].cover || -1};`,
+        { timeout: 6000, headers: headers }
+      ));
+
+      url = coverData.data[0].url.replace("thumb", "1080p") || ""
+    } catch (e) {
+      if (e.message.includes('timeout'))
+        throw new HttpException('IGDB server error', HttpStatus.GATEWAY_TIMEOUT);
+      else
+        throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    };
 
     if (url.length > 0) {
       this.gamesRepo.update({ "_id": game._id }, { coverUrl: url });
@@ -141,7 +142,8 @@ export class GamesService {
     });
 
     if (currentGames.length > 0) {
-      currentGames.sort(function (a, b) { return a.lastPlayed - b.lastPlayed; })
+      // in case there's more than 1 game currently playing, get latest played
+      currentGames.sort(function (a, b) { return b.lastPlayed - a.lastPlayed; })
       selectedGame = currentGames[0];
     } else {
       const notCompletedGames = await this.gamesRepo.find({

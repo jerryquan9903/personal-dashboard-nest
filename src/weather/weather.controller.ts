@@ -1,6 +1,7 @@
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { WeatherService } from './weather.service';
 import { Controller, Get, Query } from '@nestjs/common';
+import { IWeather } from './weather.interfaces';
 
 class Position {
   @ApiProperty()
