@@ -170,7 +170,7 @@ export class GamesService {
       devs: selectedGame.devs,
       releaseDate: selectedGame.releaseDate,
       description: selectedGame.description,
-      isNotCurrent: currentGames.length > 0
+      isNotCurrent: currentGames.length === 0
     }
 
     return currentGameFinal;

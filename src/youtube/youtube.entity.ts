@@ -1,25 +1,21 @@
-import { Entity, ObjectIdColumn, Column } from 'typeorm';
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { IVideo } from "./youtube.interfaces";
 
 @Entity()
-export class Token {
+export class YouTube {
 
-  @ObjectIdColumn()
+  @PrimaryKey()
   _id: string;
 
-  @Column()
+  @Property()
   name: string;
 
-  @Column()
+  @Property()
   thumbnail: string;
 
-  @Column()
+  @Property()
   uploadId: string;
 
-  @Column()
-  reddit: {
-    clientId: string,
-    clientSecret: string,
-    username: string,
-    password: string
-  }
+  @Property()
+  videos: IVideo[];
 }

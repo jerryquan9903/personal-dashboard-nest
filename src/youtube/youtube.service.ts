@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { TokenService } from 'src/token/token.service';
 import { google } from 'googleapis';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { YouTube } from './youtube.entity';
+import { MongoEntityRepository } from '@mikro-orm/mongodb';
 
 @Injectable()
 export class YoutubeService {
@@ -8,6 +11,8 @@ export class YoutubeService {
   private youtube;
 
   constructor(
+    @InjectRepository(YouTube)
+    private youtubeRepo: MongoEntityRepository<YouTube>,
     private tokenFunctions: TokenService
   ) {
     (async () => {
@@ -20,7 +25,7 @@ export class YoutubeService {
     })
   }
 
-  async getNewVideos(): Promise<any> {
-    
+  async updateVideos(): Promise<any> {
+
   }
 }

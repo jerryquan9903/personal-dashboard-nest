@@ -9,7 +9,7 @@ export class TokenService {
   constructor(
     @InjectRepository(Token)
     private tokenRepo: MongoEntityRepository<Token>,
-  ) {}
+  ) { }
 
   async getTokenObject(): Promise<Token> {
     const tokenObject = await this.tokenRepo.findOne({
@@ -20,10 +20,13 @@ export class TokenService {
   }
 
   async updateToken(id: string, data: any): Promise<boolean> {
-    const tokenToUpdate = await this.tokenRepo.findOne({'_id': 'tokens'});
-    wrap(tokenToUpdate).assign({[id]: data}, {mergeObjects: true});
-    await this.tokenRepo.flush();
-    // const update = await this.tokenRepo.assign({'_id': 'tokens'}, {[id]: data});
-    return true;
+    try {
+      const tokenToUpdate = await this.tokenRepo.findOne({ '_id': 'tokens' });
+      wrap(tokenToUpdate).assign({ [id]: data }, { mergeObjects: true });
+      await this.tokenRepo.flush();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
