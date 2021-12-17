@@ -1,12 +1,12 @@
-import { Entity, ObjectIdColumn, Column } from 'typeorm';
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
 @Entity()
 export class Token {
 
-  @ObjectIdColumn()
+  @PrimaryKey()
   _id: string;
 
-  @Column()
+  @Property()
   igdb: {
     clientId: string,
     clientSecret: string,
@@ -15,17 +15,17 @@ export class Token {
     lastRequest: number,
   }
 
-  @Column()
+  @Property()
   openWeather: {
     access: string,
   }
 
-  @Column()
+  @Property()
   google: {
     access: string,
   }
 
-  @Column()
+  @Property()
   reddit: {
     clientId: string,
     clientSecret: string,

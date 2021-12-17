@@ -1,13 +1,14 @@
 import { Token } from './token.entity';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MongoRepository } from 'typeorm';
+import { MongoEntityRepository } from '@mikro-orm/mongodb';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { wrap } from '@mikro-orm/core';
 
 @Injectable()
 export class TokenService {
   constructor(
     @InjectRepository(Token)
-    private tokenRepo: MongoRepository<Token>,
+    private tokenRepo: MongoEntityRepository<Token>,
   ) {}
 
   async getTokenObject(): Promise<Token> {
@@ -18,8 +19,11 @@ export class TokenService {
     return tokenObject;
   }
 
-  async updateToken(id: string, data: any): Promise<Boolean> {
-    const update = await this.tokenRepo.update({'_id': 'tokens'}, {[id]: data});
-    return update.affected > 0;
+  async updateToken(id: string, data: any): Promise<boolean> {
+    const tokenToUpdate = await this.tokenRepo.findOne({'_id': 'tokens'});
+    wrap(tokenToUpdate).assign({[id]: data}, {mergeObjects: true});
+    await this.tokenRepo.flush();
+    // const update = await this.tokenRepo.assign({'_id': 'tokens'}, {[id]: data});
+    return true;
   }
 }

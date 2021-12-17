@@ -8,6 +8,7 @@ export interface IGame {
   devs: string,
   releaseDate: string,
   description: string,
+  isNotCurrent?: boolean
 }
 
 export interface INextGames {

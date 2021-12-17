@@ -1,12 +1,13 @@
 import { HttpService } from "@nestjs/axios";
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from "dayjs";
 import { TokenService } from "src/token/token.service";
-import { MongoRepository } from 'typeorm';
 import { Games } from "./games.entity";
 import { lastValueFrom } from "rxjs";
 import { IGame, INextGames } from "./games.interfaces";
+import { wrap } from "@mikro-orm/core";
+import { MongoEntityRepository } from "@mikro-orm/mongodb";
+import { InjectRepository } from "@mikro-orm/nestjs";
 
 interface IHeaders {
   client_id: string,
@@ -25,7 +26,7 @@ export class GamesService {
 
   constructor(
     @InjectRepository(Games)
-    private gamesRepo: MongoRepository<Games>,
+    private gamesRepo: MongoEntityRepository<Games>,
     private tokenFunctions: TokenService,
     private httpService: HttpService
   ) {
@@ -129,7 +130,9 @@ export class GamesService {
     };
 
     if (url.length > 0) {
-      this.gamesRepo.update({ "_id": game._id }, { coverUrl: url });
+      const gameToUpdate = await this.gamesRepo.findOne({ "_id": game._id });
+      wrap(gameToUpdate).assign({ coverUrl: url }, { mergeObjects: true })
+      await this.gamesRepo.flush();
       return url;
     } else return "";
   }
@@ -147,7 +150,7 @@ export class GamesService {
       selectedGame = currentGames[0];
     } else {
       const notCompletedGames = await this.gamesRepo.find({
-        where: { completion: { $ne: "Completed" } }
+        completion: { $ne: "Completed" }
       });
 
       if (notCompletedGames.length === 0) {
@@ -166,7 +169,8 @@ export class GamesService {
       genres: selectedGame.genres,
       devs: selectedGame.devs,
       releaseDate: selectedGame.releaseDate,
-      description: selectedGame.description
+      description: selectedGame.description,
+      isNotCurrent: currentGames.length > 0
     }
 
     return currentGameFinal;

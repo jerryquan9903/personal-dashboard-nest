@@ -1,43 +1,42 @@
-import { Entity, ObjectIdColumn, Column } from 'typeorm';
-
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 @Entity()
 export class Games {
-  @ObjectIdColumn()
+  @PrimaryKey()
   _id: string;
 
-  @Column()
+  @Property()
   name: string;
 
-  @Column()
+  @Property()
   gameId: string;
 
-  @Column()
+  @Property()
   source: string;
 
-  @Column()
+  @Property()
   platform: string;
 
-  @Column() 
+  @Property() 
   genres: string;
 
-  @Column()
+  @Property()
   devs: string;
 
-  @Column()
+  @Property()
   description: string;
 
-  @Column()
+  @Property()
   completion: string;
 
-  @Column()
+  @Property()
   playTime: number;
 
-  @Column()
+  @Property()
   lastPlayed: number;
 
-  @Column()
+  @Property()
   releaseDate: string;
 
-  @Column()
+  @Property()
   coverUrl: string;
 }

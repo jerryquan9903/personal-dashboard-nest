@@ -21,6 +21,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@mikro-orm/core": "^4.5.9",
+    "@mikro-orm/mongodb": "^4.5.9",
+    "@mikro-orm/nestjs": "^4.3.1",
     "@nestjs/axios": "^0.0.3",
     "@nestjs/common": "^8.2.3",
     "@nestjs/config": "^1.1.5",
@@ -30,12 +33,13 @@
     "@nestjs/typeorm": "^8.0.2",
     "axios": "^0.24.0",
     "dayjs": "^1.10.7",
+    "googleapis": "^92.0.0",
     "mongodb": "^3.7.3",
     "mongoose": "^6.1.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "run-script-webpack-plugin": "^0.0.11",
-    "rxjs": "^7.2.0",
+    "rxjs": "^7.4.0",
     "swagger-ui-express": "^4.2.0",
     "typeorm": "^0.2.41"
   },
