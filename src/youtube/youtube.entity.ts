@@ -1,9 +1,31 @@
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
-import { IVideo } from "./youtube.interfaces";
 
-@Entity()
-export class YouTube {
+@Entity({ collection: 'youtube' })
+export class YoutubeVideo {
+  @PrimaryKey()
+  _id: string;
 
+  @Property()
+  videoId: string;
+
+  @Property()
+  videoName: string;
+
+  @Property()
+  publishedAt: string;
+
+  @Property()
+  thumbnail: string;
+
+  @Property()
+  channelId: string;
+
+  @Property()
+  channelName: string;
+}
+
+@Entity({ collection: 'youtube-channels' })
+export class YoutubeChannel {
   @PrimaryKey()
   _id: string;
 
@@ -15,7 +37,4 @@ export class YouTube {
 
   @Property()
   uploadId: string;
-
-  @Property()
-  videos: IVideo[];
 }

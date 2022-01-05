@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-@Entity()
+@Entity({collection: 'token'})
 export class Token {
 
   @PrimaryKey()
@@ -29,6 +29,14 @@ export class Token {
   reddit: {
     clientId: string,
     clientSecret: string,
+    username: string,
+    password: string
+  }
+
+  @Property()
+  mangadex: {
+    session: string,
+    refresh: string,
     username: string,
     password: string
   }

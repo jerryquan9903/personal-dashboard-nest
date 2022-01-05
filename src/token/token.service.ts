@@ -21,9 +21,15 @@ export class TokenService {
 
   async updateToken(id: string, data: any): Promise<boolean> {
     try {
-      const tokenToUpdate = await this.tokenRepo.findOne({ '_id': 'tokens' });
-      wrap(tokenToUpdate).assign({ [id]: data }, { mergeObjects: true });
-      await this.tokenRepo.flush();
+      const tokenToUpdate = await this.tokenRepo.findOne({ _id: 'tokens' });
+      if (id in tokenToUpdate) {
+        wrap(tokenToUpdate).assign({ [id]: data }, { mergeObjects: true });
+        await this.tokenRepo.flush();
+      } else {
+        tokenToUpdate[id] = data;
+        await this.tokenRepo.persistAndFlush(tokenToUpdate);
+      }
+
       return true;
     } catch (e) {
       return false;

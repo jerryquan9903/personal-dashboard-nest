@@ -8,6 +8,7 @@ import { WeatherModule } from './weather/weather.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { MongoNamingStrategy } from '@mikro-orm/core';
+import { MangaModule } from './manga/manga.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { MongoNamingStrategy } from '@mikro-orm/core';
     GamesModule,
     TokenModule,
     WeatherModule,
-    YoutubeModule
+    YoutubeModule,
+    MangaModule
   ],
   controllers: [AppController],
   providers: [AppService],
