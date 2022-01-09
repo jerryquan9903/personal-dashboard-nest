@@ -9,11 +9,13 @@ import { YoutubeModule } from './youtube/youtube.module';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { MongoNamingStrategy } from '@mikro-orm/core';
 import { MangaModule } from './manga/manga.module';
+import config from 'config/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [config]
     }),
     MikroOrmModule.forRoot({
       entities: ['dist/src/**/*.entity.js'],

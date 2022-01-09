@@ -1,20 +1,14 @@
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { IMangaName } from "./manga.interface";
 
-@Entity()
+@Entity({ collection: 'manga' })
 export class Manga {
   @PrimaryKey()
   _id: string;
 
   @Property()
-  names: IMangaName;
+  name: string;
 
   @Property()
   cover: string;
-
-  @Property()
-  latestChapter: number;
-
-  @Property()
-  latestUrl: string;
 }

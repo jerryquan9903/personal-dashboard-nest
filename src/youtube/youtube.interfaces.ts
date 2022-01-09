@@ -5,6 +5,7 @@ export interface IVideo {
   publishedAt: string,
   thumbnail: string,
   channelId: string,
+  channelName: string
 }
 
 export interface IChannel {

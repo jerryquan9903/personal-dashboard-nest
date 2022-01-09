@@ -3,7 +3,7 @@ import { YoutubeService } from './youtube.service';
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { YoutubeVideo } from './youtube.entity';
-import { IChannel } from './youtube.interfaces';
+import { IChannel, IVideo } from './youtube.interfaces';
 
 @ApiTags('YouTube')
 @Controller('youtube')
@@ -13,7 +13,7 @@ export class YoutubeController {
   ) { }
 
   @Get('video/new')
-  async getNew(): Promise<YoutubeVideo[]> {
+  async getNew(): Promise<IVideo[]> {
     return await this.youtube.getNew();
   }
 

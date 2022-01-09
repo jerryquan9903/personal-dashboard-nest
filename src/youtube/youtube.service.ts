@@ -1,12 +1,11 @@
 import { IVideo, IChannel } from './youtube.interfaces';
-import { Inject, Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { TokenService } from 'src/token/token.service';
 import { google } from 'googleapis';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { YoutubeVideo, YoutubeChannel } from './youtube.entity';
 import { MongoEntityRepository } from '@mikro-orm/mongodb';
 import dayjs from 'dayjs';
-import { QueryOrder } from '@mikro-orm/core';
 
 @Injectable()
 export class YoutubeService {
@@ -33,74 +32,60 @@ export class YoutubeService {
   }
 
   // youtube/video/new
-  async getNew(): Promise<YoutubeVideo[]> {
-    const channels = await this.channelRepo.find({});
-    channels.forEach((channel) => {
-      (async () => {
-        const newestVideo = await this.videoRepo.find(
-          { channelId: channel._id },
-          { limit: 1, orderBy: { publishedAt: QueryOrder.DESC } }
-        );
-
-        await this.updateVideos(channel._id, channel.uploadId, channel.name, newestVideo[0]?.publishedAt || "");
-      })()
-    })
-
-    const newVideos = await this.videoRepo.find({}, { limit: 10, orderBy: { publishedAt: QueryOrder.DESC } });
-    return newVideos;
-  }
-
-  async updateVideos(id: string, uploadId: string, name: string, latest: string): Promise<boolean> {
+  async getNew(): Promise<IVideo[]> {
     const resolutionPrefs = ['maxres', 'standard', 'high', 'medium', 'default'];
+    const channels = await this.channelRepo.find({});
 
-    try {
-      const req = await this.youtube.playlistItems.list({
-        part: "snippet,contentDetails",
-        playlistId: uploadId,
-        maxResults: 5,
-      })
+    const toReturn = [];
 
-      if (req.data.items.length === 0) {
-        console.log('No videos found');
-        return;
+    for (const channel of channels) {
+      try {
+        const req = await this.youtube.playlistItems.list({
+          part: "snippet,contentDetails",
+          playlistId: channel.uploadId,
+          maxResults: 5,
+        })
+
+        if (req.data.items.length === 0) {
+          console.log('No videos found');
+          return;
+        }
+        const videos = req.data.items;
+
+        const mappedVideos: IVideo[] = videos.map((video) => {
+          let thumbnail: string = "";
+
+          for (let i = 0; i < resolutionPrefs.length; i++) {
+            if (resolutionPrefs[i] in video.snippet.thumbnails) {
+              thumbnail = video.snippet.thumbnails[resolutionPrefs[i]].url;
+              break;
+            }
+          }
+
+          return {
+            _id: video.id,
+            videoId: video.contentDetails.videoId,
+            videoName: video.snippet.title,
+            publishedAt: video.contentDetails.videoPublishedAt,
+            thumbnail: thumbnail,
+            channelId: channel._id,
+            channelName: channel.name,
+          }
+        })
+
+        toReturn.push(mappedVideos);
+      } catch (e) {
+        console.log(e);
       }
-      const videos = req.data.items;
-
-      videos.forEach((video) => {
-        let thumbnail: string = "";
-
-        if (latest.length > 0) {
-          const latestDayjs = dayjs(latest);
-          if (dayjs(video.contentDetails.videoPublishedAt).diff(latestDayjs) <= 0) {
-            return;
-          }
-        }
-
-        for (let i = 0; i < resolutionPrefs.length; i++) {
-          if (resolutionPrefs[i] in video.snippet.thumbnails) {
-            thumbnail = video.snippet.thumbnails[resolutionPrefs[i]].url;
-            break;
-          }
-        }
-
-        const toInsert = new YoutubeVideo();
-        toInsert._id = video.id;
-        toInsert.videoId = video.contentDetails.videoId;
-        toInsert.videoName = video.snippet.title;
-        toInsert.publishedAt = video.contentDetails.videoPublishedAt;
-        toInsert.thumbnail = thumbnail;
-        toInsert.channelId = id;
-        toInsert.channelName = name;
-
-        this.videoRepo.persist(toInsert);
-      })
-    } catch (e) {
-      console.log(e);
-      return false;
     }
 
-    await this.videoRepo.flush();
-    return true;
+    const flatten = toReturn.flat();
+
+    flatten.sort((a, b) => {
+      return dayjs(b.publishedAt).unix() - dayjs(a.publishedAt).unix();
+    });
+
+    return flatten.slice(0, 10);
   }
 
   // /youtube/channel/insert
@@ -132,11 +117,8 @@ export class YoutubeService {
     toInsert.uploadId = uploadId;
 
     await this.channelRepo.persistAndFlush(toInsert);
-    const updateVids = await this.updateVideos(id, uploadId, name, "");
+    return 'ok'
 
-    if (updateVids)
-      return 'Channel added'
-    else return 'Channel added; update videos failed'
   }
 
   // youtube/channel/delete
